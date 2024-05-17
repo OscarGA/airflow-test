@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+    postgres:
+        image: postgres:latest
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+    scheduler:
+        image: apache/airflow:latest
+        entrypoint: ["/bin/sh","-c"]
+        command: 
+        - | 
+            pip install duckdb --upgrade
+            airflow scheduler
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+        volumes:
+            - ./dags:/opt/airflow/dags
+            - ./logs:/opt/airflow/logs
+        ports:
+            - "8081:8081"
+    webserver:
+        image: apache/airflow:latest
+        entrypoint: ./scripts/entrypoint.sh
+        depends_on:
+            - postgres
+            - scheduler
+        env_file:
+            - .env
+        volumes:
+            - ./dags:/opt/airflow/dags
+            - ./logs:/opt/airflow/logs
+            - ./scripts:/opt/airflow/scripts
+        ports:
+            - "8080:8080"
